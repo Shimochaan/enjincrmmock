@@ -2,10 +2,87 @@
 
 const { useState: useStateEvents } = React;
 
+// 新規イベントの入力フォーム（モーダル）
+const NewEventForm = ({ onClose, onAdd }) => {
+  const [title, setTitle]     = useStateEvents("");
+  const [date, setDate]       = useStateEvents(new Date().toISOString().slice(0, 10));
+  const [time, setTime]       = useStateEvents("20:00-22:00");
+  const [format, setFormat]   = useStateEvents("online");
+  const [theme, setTheme]     = useStateEvents("");
+  const [host, setHost]       = useStateEvents("");
+  const [summary, setSummary] = useStateEvents("");
+
+  const submit = () => {
+    if (!title.trim()) return; // タイトルは必須
+    const event = {
+      id: "u" + Date.now(),
+      title: title.trim(),
+      date,
+      time: time.trim(),
+      format,
+      theme: theme.trim(),
+      host: host.trim(),
+      summary: summary.trim(),
+      participants: [], // 参加者は後から追加（最初は空配列）
+    };
+    onAdd(event);
+  };
+
+  return (
+    <Modal title="新規イベントを登録" onClose={onClose} footer={
+      <>
+        <button className="btn" onClick={onClose}>キャンセル</button>
+        <button className="btn btn-primary" onClick={submit} disabled={!title.trim()}>
+          <IconPlus size={13}/>保存
+        </button>
+      </>
+    }>
+      <Field label="タイトル" required>
+        <input className="field-input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="enjin定例#13" autoFocus/>
+      </Field>
+      <div className="field-row">
+        <Field label="日付">
+          <input className="field-input" type="date" value={date} onChange={(e) => setDate(e.target.value)}/>
+        </Field>
+        <Field label="時間">
+          <input className="field-input" value={time} onChange={(e) => setTime(e.target.value)} placeholder="20:00-22:00"/>
+        </Field>
+      </div>
+      <div className="field-row">
+        <Field label="形式">
+          <select value={format} onChange={(e) => setFormat(e.target.value)}>
+            <option value="online">オンライン</option>
+            <option value="offline">オフライン</option>
+          </select>
+        </Field>
+        <Field label="ホスト">
+          <input className="field-input" value={host} onChange={(e) => setHost(e.target.value)} placeholder="オーナー本人"/>
+        </Field>
+      </div>
+      <Field label="テーマ">
+        <input className="field-input" value={theme} onChange={(e) => setTheme(e.target.value)} placeholder="起案者LT × 5人"/>
+      </Field>
+      <Field label="所感・メモ">
+        <textarea className="field-input" value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="当日の様子や気づきをメモ"/>
+      </Field>
+    </Modal>
+  );
+};
+
 const EventsListScreen = () => {
   const { navigate } = useRouter();
   const [search, setSearch] = useStateEvents("");
   const [formatFilter, setFormatFilter] = useStateEvents("all");
+  const [showNew, setShowNew] = useStateEvents(false); // 新規イベントフォームの開閉
+  const [, setRefresh] = useStateEvents(0);            // 追加後に再描画させるためのカウンタ
+
+  // フォームから受け取ったイベントを「保存 → 一覧に反映」する
+  const handleAddEvent = (event) => {
+    addStoredEvent(event); // ① localStorage の配列に追加保存
+    EVENTS.push(event);    // ② 画面が見ている配列にも追加
+    setShowNew(false);
+    setRefresh(n => n + 1); // ③ 再描画
+  };
 
   const filtered = EVENTS
     .filter(e => !search || e.title.includes(search) || e.theme.includes(search))
@@ -14,7 +91,8 @@ const EventsListScreen = () => {
 
   const totalAttendance = EVENTS.reduce((acc, e) => {
     const present = e.participants.filter(p => p.status === "present" || p.status === "late").length;
-    return acc + present / e.participants.length;
+    // 参加者0人のイベントは 0 として扱う（0除算でNaNにならないように）
+    return acc + (e.participants.length ? present / e.participants.length : 0);
   }, 0);
   const avgAttend = Math.round((totalAttendance / EVENTS.length) * 100);
 
@@ -27,9 +105,11 @@ const EventsListScreen = () => {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn"><IconDownload size={13}/>CSV出力</button>
-          <button className="btn btn-primary"><IconPlus size={13}/>新規イベント</button>
+          <button className="btn btn-primary" onClick={() => setShowNew(true)}><IconPlus size={13}/>新規イベント</button>
         </div>
       </div>
+
+      {showNew && <NewEventForm onClose={() => setShowNew(false)} onAdd={handleAddEvent}/>}
 
       <div className="toolbar">
         <div className="input" style={{ minWidth: 320 }}>
@@ -77,7 +157,7 @@ const EventsListScreen = () => {
             <tbody>
               {filtered.map(e => {
                 const present = e.participants.filter(p => p.status === "present" || p.status === "late").length;
-                const rate = Math.round(present / e.participants.length * 100);
+                const rate = e.participants.length ? Math.round(present / e.participants.length * 100) : 0;
                 return (
                   <tr key={e.id} onClick={() => navigate({ screen: "event", id: e.id })}>
                     <td className="muted tabular">{e.date}</td>
@@ -109,7 +189,7 @@ const EventDetailScreen = ({ id }) => {
   if (!e) return <div className="page"><div className="empty">イベントが見つかりません</div></div>;
 
   const present = e.participants.filter(p => p.status === "present" || p.status === "late").length;
-  const rate = Math.round(present / e.participants.length * 100);
+  const rate = e.participants.length ? Math.round(present / e.participants.length * 100) : 0;
   const visibleParticipants = e.participants
     .map(p => ({ p, m: memberById(p.memberId) }))
     .filter(x => !pSearch || x.m.name.includes(pSearch));
@@ -249,7 +329,7 @@ const EventDetailScreen = ({ id }) => {
             <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
               {["present", "late", "absent"].map(s => {
                 const n = e.participants.filter(p => p.status === s).length;
-                const pct = (n / e.participants.length) * 100;
+                const pct = e.participants.length ? (n / e.participants.length) * 100 : 0;
                 const def = STATUS_DEF.attendance[s];
                 return (
                   <div key={s}>

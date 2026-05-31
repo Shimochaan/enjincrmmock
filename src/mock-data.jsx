@@ -193,6 +193,12 @@ const PROPOSALS = [
   },
 ];
 
+// localStorage に保存済みの「自分で追加した会員/イベント」を読み込んで合流させる。
+// （元の25件のモックはコードのまま。追加分だけを後ろに足す）
+// storage.jsx が index.html で先に読み込まれている前提。
+loadStoredMembers().forEach(m => MEMBERS.push(m));
+loadStoredEvents().forEach(e => EVENTS.push(e));
+
 // Aggregations / cross-references
 const memberById = (id) => MEMBERS.find(m => m.id === id);
 const eventById = (id) => EVENTS.find(e => e.id === id);

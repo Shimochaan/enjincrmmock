@@ -246,7 +246,37 @@ const KpiSpark = ({ data, color = "var(--fg)" }) => (
   <Sparkline data={data} width={70} height={26} accent={color}/>
 );
 
+// Modal — 中央に出る入力フォーム用のダイアログ（背景を暗くして前面に表示）
+const Modal = ({ title, onClose, children, footer, width = 460 }) => {
+  // Escキーで閉じられるようにする
+  useEffect(() => {
+    const h = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
+  }, [onClose]);
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" style={{ maxWidth: width }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <div className="card-title">{title}</div>
+          <button className="icon-btn" onClick={onClose}><IconX size={15}/></button>
+        </div>
+        <div className="modal-body">{children}</div>
+        {footer && <div className="modal-footer">{footer}</div>}
+      </div>
+    </div>
+  );
+};
+
+// Field — ラベル付きの入力欄（フォームの1行）
+const Field = ({ label, children, required = false }) => (
+  <label className="field">
+    <span className="field-label">{label}{required && <span className="field-req">*</span>}</span>
+    {children}
+  </label>
+);
+
 Object.assign(window, {
   cls, Avatar, Badge, StatusBadge, STATUS_DEF, Checkbox, Tabs, Card, KPI,
-  Sparkline, BarChart, LineChart, Tag, Select, Pager, KpiSpark,
+  Sparkline, BarChart, LineChart, Tag, Select, Pager, KpiSpark, Modal, Field,
 });

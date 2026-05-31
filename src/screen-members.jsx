@@ -2,6 +2,80 @@
 
 const { useState: useStateMembers } = React;
 
+// 今日の日付を "YYYY-MM-DD" で返す
+const todayStr = () => new Date().toISOString().slice(0, 10);
+
+// 新規会員の入力フォーム（モーダル）
+const NewMemberForm = ({ onClose, onAdd }) => {
+  const [name, setName]     = useStateMembers("");
+  const [email, setEmail]   = useStateMembers("");
+  const [phone, setPhone]   = useStateMembers("");
+  const [status, setStatus] = useStateMembers("active");
+  const [job, setJob]       = useStateMembers("");
+  const [tags, setTags]     = useStateMembers(""); // カンマ区切りで入力
+
+  const submit = () => {
+    if (!name.trim()) return; // 名前は必須
+    // 入力値から1人分の会員オブジェクトを組み立てる
+    const member = {
+      id: "u" + Date.now(),               // 他と重ならないID
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      joined: todayStr(),
+      status,
+      lastSeen: 0,
+      visits: 0,
+      proposals: 0,
+      // "PM, エンジニア" のような入力を ["PM","エンジニア"] に変換
+      tags: tags.split(",").map(t => t.trim()).filter(Boolean),
+      job: job.trim(),
+      skills: [],
+      interests: [],
+      note: [],
+    };
+    onAdd(member);
+  };
+
+  return (
+    <Modal title="新規会員を登録" onClose={onClose} footer={
+      <>
+        <button className="btn" onClick={onClose}>キャンセル</button>
+        <button className="btn btn-primary" onClick={submit} disabled={!name.trim()}>
+          <IconPlus size={13}/>保存
+        </button>
+      </>
+    }>
+      <Field label="名前" required>
+        <input className="field-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="山田 太郎" autoFocus/>
+      </Field>
+      <div className="field-row">
+        <Field label="メール">
+          <input className="field-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="taro@example.com"/>
+        </Field>
+        <Field label="電話">
+          <input className="field-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="080-1234-5678"/>
+        </Field>
+      </div>
+      <div className="field-row">
+        <Field label="ステータス">
+          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="active">active</option>
+            <option value="dormant">dormant</option>
+            <option value="new">new</option>
+          </select>
+        </Field>
+        <Field label="職業">
+          <input className="field-input" value={job} onChange={(e) => setJob(e.target.value)} placeholder="プロダクトマネージャー"/>
+        </Field>
+      </div>
+      <Field label="タグ（カンマ区切り）">
+        <input className="field-input" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="PM, エンジニア"/>
+      </Field>
+    </Modal>
+  );
+};
+
 const MembersListScreen = ({ initialFilter }) => {
   const { navigate } = useRouter();
   const [search, setSearch] = useStateMembers("");
@@ -11,7 +85,17 @@ const MembersListScreen = ({ initialFilter }) => {
   const [snsMin, setSnsMin] = useStateMembers(0);
   const [selected, setSelected] = useStateMembers(new Set());
   const [page, setPage] = useStateMembers(1);
+  const [showNew, setShowNew] = useStateMembers(false); // 新規会員フォームの開閉
+  const [, setRefresh] = useStateMembers(0);            // 追加後に再描画させるためのカウンタ
   const perPage = 20;
+
+  // フォームから受け取った会員を「保存 → 一覧に反映」する
+  const handleAddMember = (member) => {
+    addStoredMember(member); // ① localStorage の配列に追加保存
+    MEMBERS.push(member);    // ② 画面が見ている配列にも追加（即反映用）
+    setShowNew(false);
+    setRefresh(n => n + 1);  // ③ 再描画
+  };
 
   const filtered = MEMBERS.filter(m => {
     if (search && !m.name.includes(search) && !m.email.toLowerCase().includes(search.toLowerCase())) return false;
@@ -57,9 +141,11 @@ const MembersListScreen = ({ initialFilter }) => {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn"><IconDownload size={13}/>CSV出力</button>
-          <button className="btn btn-primary"><IconPlus size={13}/>新規会員</button>
+          <button className="btn btn-primary" onClick={() => setShowNew(true)}><IconPlus size={13}/>新規会員</button>
         </div>
       </div>
+
+      {showNew && <NewMemberForm onClose={() => setShowNew(false)} onAdd={handleAddMember}/>}
 
       <div className="toolbar">
         <div className="input" style={{ minWidth: 320 }}>
