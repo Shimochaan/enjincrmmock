@@ -11,6 +11,8 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<!-- Supabase JS クライアント（DB接続ライブラリ）。window.supabase を提供する。babel前の通常scriptで先に読む -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -29,6 +31,8 @@
 <script type="text/babel" src="src/icons.jsx"></script>
 <script type="text/babel" src="src/primitives.jsx"></script>
 <script type="text/babel" src="src/storage.jsx"></script>
+<!-- Supabase 接続設定（URL・キー）。DBデモ画面が使う -->
+<script type="text/babel" src="src/supabase-client.jsx"></script>
 <script type="text/babel" src="src/mock-data.jsx"></script>
 <script type="text/babel" src="src/mock-data-v2.jsx"></script>
 <script type="text/babel" src="src/shell.jsx"></script>
@@ -38,6 +42,8 @@
 <script type="text/babel" src="src/screen-proposals.jsx"></script>
 <script type="text/babel" src="src/screen-sns.jsx"></script>
 <script type="text/babel" src="src/screen-import.jsx"></script>
+<!-- Supabase DBデモ画面（本物のDBに繋がる課題提出用の画面） -->
+<script type="text/babel" src="src/screen-db-demo.jsx"></script>
 <script type="text/babel" src="src/app.jsx"></script>
 </body>
 </html>

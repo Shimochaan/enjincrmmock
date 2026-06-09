@@ -88,6 +88,10 @@ const App = () => {
       content = <ImportScreen/>;
       crumbs = [{ label: "インポート" }];
       break;
+    case "db-demo":                       // 追加: Supabase DBデモ画面
+      content = <DbDemoScreen/>;
+      crumbs = [{ label: "DBデモ" }];
+      break;
     case "settings":
       content = <SettingsScreen/>;
       crumbs = [{ label: "設定" }];

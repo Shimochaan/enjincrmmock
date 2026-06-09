@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { key: "sns",       label: "SNS投稿",        icon: IconShare,     hint: "g s" },
 ];
 const NAV_SECONDARY = [
+  { key: "db-demo",   label: "DBデモ",     icon: IconRepeat },   // 追加: Supabase接続デモ（双方向=IconRepeat）
   { key: "import",    label: "インポート", icon: IconUpload },
   { key: "settings",  label: "設定",       icon: IconSettings },
 ];
